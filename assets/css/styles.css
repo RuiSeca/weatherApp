@@ -1,0 +1,37 @@
+/* styles.css */
+
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: blue;
+    padding: 20px;
+}
+  
+  h1 {
+    color: #333;
+  }
+  
+  input {
+    padding: 10px;
+    margin: 10px;
+  }
+  
+  button {
+    padding: 10px 20px;
+    background-color: #4caf50;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+  }
+  
+  button:hover {
+    background-color: #45a049;
+  }
+  
+  #weatherInfo {
+    margin-top: 20px;
+  }
+  
+  #location, #temperature, #description {
+    margin: 10px 0;
+  }
