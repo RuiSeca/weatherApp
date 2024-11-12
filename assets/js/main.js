@@ -48,9 +48,11 @@ function displayWeather(data) {
       weatherIcon.src = "assets/images/clear.png";
       break;
     case "Rain":
-      // Handle different types of rain (light, heavy, etc.)
-      if (data.weather[0].description.includes("heavy")) {
-        weatherIcon.src = "assets/images/heavy-rain.png"; // For heavy rain
+      // Handle different types of rain (light, moderate, heavy, etc.)
+      if (data.weather[0].description.includes("light rain")) {
+        weatherIcon.src = "assets/images/light-rain.png"; // Light rain
+      } else if (data.weather[0].description.includes("heavy rain")) {
+        weatherIcon.src = "assets/images/heavy-rain.png"; // Heavy rain
       } else {
         weatherIcon.src = "assets/images/rain.png"; // Default rain image
       }
