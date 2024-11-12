@@ -1,41 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="assets/css/styles.css" />
-  <title>Weather</title>
-</head>
-<body>
-  <div class="card">
-    <h1>Weather Cast</h1>
-    <!-- Added placeholder to the input field -->
-    <input type="text" id="locationInput" placeholder="Enter location">
-    <button id="weatherButton">Get Weather</button>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Weather forecast application providing real-time weather information"
+    />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+    <title>Weather Cast</title>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Weather Cast</h1>
 
-    <div class="weather">
-      <img src="assets/images/rain.png" class="weather-icon" alt="Rainy weather">
-      <h1 class="temp" id="temperature">Temperature:</h1>
-      <h2 class="city" id="location">Location:</h2>
-
-      <div class="details">
-        <div class="col">
-          <img src="assets/images/humidity.png" alt="Humidity icon">
-          <div>
-            <p class="humidity" id="humidity">Humidity:</p>
-          </div>
+      <div class="search-container">
+        <div class="input-wrapper">
+          <input
+            type="text"
+            id="locationInput"
+            list="cities"
+            placeholder="Enter city name"
+            aria-label="Enter city name"
+            autocomplete="off"
+          />
+          <datalist id="cities"></datalist>
         </div>
+        <button id="weatherButton">Get Weather</button>
+      </div>
 
-        <div class="col">
-          <img src="assets/images/wind.png" alt="Wind speed icon">
-          <div>
-            <p class="wind" id="wind">Wind Speed:</p>
+      <!-- Error message container -->
+      <div id="error-message" class="error-message" role="alert"></div>
+
+      <!-- Loading spinner -->
+      <div id="loading-spinner" class="loading-spinner hidden" role="status">
+        <span class="sr-only">Loading weather data...</span>
+      </div>
+
+      <div class="weather">
+        <img
+          src="assets/images/default.png"
+          class="weather-icon"
+          alt="Weather condition"
+          id="weatherIcon"
+        />
+        <h1 class="temp" id="temperature">Temperature: --°C</h1>
+        <h2 class="city" id="location">Location: --</h2>
+
+        <div class="details">
+          <div class="col">
+            <img src="assets/images/humidity.png" alt="Humidity" />
+            <div>
+              <p class="humidity" id="humidity">--%</p>
+            </div>
+          </div>
+
+          <div class="col">
+            <img src="assets/images/wind.png" alt="Wind speed" />
+            <div>
+              <p class="wind" id="wind">-- m/s</p>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </div>
 
-  <script src="assets/js/main.js"></script>
-</body>
+      <div class="app-footer">
+        <p id="lastUpdated">Last updated: Never</p>
+      </div>
+    </div>
+
+    <script src="assets/js/main.js"></script>
+  </body>
 </html>
