@@ -1,100 +1,182 @@
-const apiKey = '5a0a261f16b6352ff63cdb857d7a97bd';
-const apiUrl = 'https://api.openweathermap.org/data/2.5/weather';
-const geocodingApiUrl = 'http://api.openweathermap.org/data/2.5/find';  // OpenWeather Geocoding API
+const apiKey = "5a0a261f16b352ff63cdb857d7a97bd";
+const apiUrl = "https://api.openweathermap.org/data/2.5/weather";
+const geocodingApiUrl = "https://api.openweathermap.org/geo/1.0/direct";
 
-document.getElementById('weatherButton').addEventListener('click', getWeather);
+// Get DOM elements
+const weatherButton = document.getElementById("weatherButton");
+const locationInput = document.getElementById("locationInput");
+const loadingSpinner = document.getElementById("loading-spinner");
 
-// Initial call to get weather
-getWeather();
+// Add event listeners
+weatherButton.addEventListener("click", getWeather);
+locationInput.addEventListener("input", handleInput);
 
-// Set interval to update weather every 10 minutes (600,000 milliseconds)
-setInterval(getWeather, 600000);
+// Initial weather call - only if there's a location value
+if (locationInput.value) {
+  getWeather();
+}
 
-// Listen for input changes to suggest city names
-document.getElementById('locationInput').addEventListener('input', getCitySuggestions);
+let debounceTimer;
+function handleInput(event) {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    if (event.target.value.length >= 3) {
+      getCitySuggestions(event.target.value);
+    }
+  }, 300);
+}
 
 async function getWeather() {
-  const location = document.getElementById('locationInput').value;
-  
+  const location = locationInput.value;
+  if (!location) {
+    showError("Please enter a location");
+    return;
+  }
+
+  // Show loading spinner
+  showLoading(true);
+
   try {
-    const response = await fetch(`${apiUrl}?q=${location}&appid=${apiKey}&units=metric`);
-    
-    // Check if the response is okay (status code 200)
+    const response = await fetch(
+      `${apiUrl}?q=${encodeURIComponent(location)}&appid=${apiKey}&units=metric`
+    );
+
     if (!response.ok) {
-      throw new Error('Location not found');
+      throw new Error(`Weather data not found for ${location}`);
     }
 
     const data = await response.json();
+
+    // Check if we have the required data
+    if (!data || !data.main || !data.weather || !data.weather[0]) {
+      throw new Error("Invalid weather data received");
+    }
+
     displayWeather(data);
+    updateLastUpdated();
+    hideError();
   } catch (error) {
-    console.error('Error fetching weather data:', error);
-    // Handle error, e.g., display a default icon or message
-    document.getElementById('location').textContent = 'Location not found';
-    document.querySelector('.weather-icon').src = 'assets/images/default.png';
+    console.error("Error:", error);
+    showError(error.message || "Failed to fetch weather data");
+    resetDisplay();
+  } finally {
+    showLoading(false);
   }
 }
 
-async function getCitySuggestions() {
-  const input = document.getElementById('locationInput').value;
-  
-  // Fetch city suggestions if input is at least 3 characters long
-  if (input.length >= 3) {
-    try {
-      const response = await fetch(`${geocodingApiUrl}?q=${input}&appid=${apiKey}&type=like`);
-      const data = await response.json();
-      
-      // Get the datalist element
-      const datalist = document.getElementById('cities');
-      
-      // Clear existing suggestions
-      datalist.innerHTML = '';
-      
-      // Add new suggestions to the datalist
-      data.list.forEach(city => {
-        const option = document.createElement('option');
-        option.value = `${city.name}, ${city.sys.country}`; // Display city name and country
-        datalist.appendChild(option);
-      });
-    } catch (error) {
-      console.error('Error fetching city suggestions:', error);
+async function getCitySuggestions(input) {
+  try {
+    const response = await fetch(
+      `${geocodingApiUrl}?q=${encodeURIComponent(
+        input
+      )}&limit=5&appid=${apiKey}`
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch city suggestions");
     }
+
+    const cities = await response.json();
+    displaySuggestions(cities);
+  } catch (error) {
+    console.error("Error:", error);
+    // Clear suggestions in case of error
+    clearSuggestions();
   }
 }
 
 function displayWeather(data) {
-  // Display weather data
-  document.getElementById('location').textContent = `Location: ${data.name}`;
-  document.getElementById('temperature').textContent = `Temperature: ${Math.round(data.main.temp)}°C`;
-  document.getElementById('humidity').textContent = `Humidity: ${data.main.humidity}%`;
-  document.getElementById('wind').textContent = `Wind Speed: ${data.wind.speed} m/s`;
+  if (!data || !data.main || !data.weather || !data.weather[0]) {
+    throw new Error("Invalid weather data");
+  }
 
-  const weatherIcon = document.querySelector('.weather-icon');
+  // Update DOM elements with weather data
+  document.getElementById("temperature").textContent = `${Math.round(
+    data.main.temp
+  )}°C`;
+  document.getElementById("location").textContent = data.name;
+  document.getElementById("humidity").textContent = `${data.main.humidity}%`;
+  document.getElementById("wind").textContent = `${data.wind.speed} m/s`;
 
-  // Check for weather condition and set the appropriate icon
-  switch (data.weather[0].main) {
-    case "Clouds":
-      weatherIcon.src = "assets/images/clouds.png";
-      break;
-    case "Clear":
-      weatherIcon.src = "assets/images/clear.png";
-      break;
-    case "Rain":
-      // Handle different types of rain (light, moderate, heavy, etc.)
-      if (data.weather[0].description.includes("light rain")) {
-        weatherIcon.src = "assets/images/light-rain.png"; // Light rain
-      } else if (data.weather[0].description.includes("heavy rain")) {
-        weatherIcon.src = "assets/images/heavy-rain.png"; // Heavy rain
-      } else {
-        weatherIcon.src = "assets/images/rain.png"; // Default rain image
-      }
-      break;
-    case "Drizzle":
-      weatherIcon.src = "assets/images/drizzle.png";
-      break;
-    case "Mist":
-      weatherIcon.src = "assets/images/mist.png";
-      break;
-    default:
-      weatherIcon.src = "assets/images/default.png"; // Set a default image
+  // Update weather icon
+  const weatherIcon = document.querySelector(".weather-icon");
+  const weatherCondition = data.weather[0].main.toLowerCase();
+
+  // Map weather conditions to icon files
+  const weatherIcons = {
+    clouds: "clouds.png",
+    clear: "clear.png",
+    rain: "rain.png",
+    drizzle: "drizzle.png",
+    mist: "mist.png",
+    snow: "snow.png",
+    thunderstorm: "thunderstorm.png",
+  };
+
+  weatherIcon.src = `assets/images/${
+    weatherIcons[weatherCondition] || "default.png"
+  }`;
+  weatherIcon.alt = data.weather[0].description;
+}
+
+function displaySuggestions(cities) {
+  const datalist = document.getElementById("cities");
+  datalist.innerHTML = "";
+
+  cities.forEach((city) => {
+    const option = document.createElement("option");
+    option.value = `${city.name}${city.state ? `, ${city.state}` : ""}, ${
+      city.country
+    }`;
+    datalist.appendChild(option);
+  });
+}
+
+function clearSuggestions() {
+  const datalist = document.getElementById("cities");
+  datalist.innerHTML = "";
+}
+
+function showError(message) {
+  const errorElement = document.getElementById("error-message");
+  if (errorElement) {
+    errorElement.textContent = message;
+    errorElement.style.display = "block";
   }
 }
+
+function hideError() {
+  const errorElement = document.getElementById("error-message");
+  if (errorElement) {
+    errorElement.style.display = "none";
+  }
+}
+
+function showLoading(show) {
+  if (loadingSpinner) {
+    loadingSpinner.classList.toggle("hidden", !show);
+  }
+}
+
+function resetDisplay() {
+  document.getElementById("temperature").textContent = "Temperature: --°C";
+  document.getElementById("location").textContent = "Location: --";
+  document.getElementById("humidity").textContent = "--%";
+  document.getElementById("wind").textContent = "-- m/s";
+  document.querySelector(".weather-icon").src = "assets/images/default.png";
+}
+
+function updateLastUpdated() {
+  const lastUpdated = document.getElementById("lastUpdated");
+  if (lastUpdated) {
+    const now = new Date();
+    lastUpdated.textContent = `Last updated: ${now.toLocaleTimeString()}`;
+  }
+}
+
+// Update weather every 10 minutes if there's a location entered
+setInterval(() => {
+  if (locationInput.value) {
+    getWeather();
+  }
+}, 600000);
