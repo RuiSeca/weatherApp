@@ -1,88 +1,7 @@
-const apiKey = "5a0a261f16b352ff63cdb857d7a97bd";
+const apiKey = "5a0a261f16b6352ff63cdb857d7a97bd";
 const apiUrl = "https://api.openweathermap.org/data/2.5/weather";
-const geocodingApiUrl = "https://api.openweathermap.org/data/2.5/find"; // Using find API instead
 
 document.getElementById("weatherButton").addEventListener("click", getWeather);
-document.getElementById("locationInput").addEventListener("input", handleInput);
-
-let timeoutId;
-
-function handleInput(event) {
-  const input = event.target.value;
-
-  // Clear previous timeout
-  clearTimeout(timeoutId);
-
-  // Don't search if input is too short
-  if (input.length < 3) {
-    clearSuggestions();
-    return;
-  }
-
-  // Set new timeout
-  timeoutId = setTimeout(() => {
-    searchCities(input);
-  }, 500);
-}
-
-async function searchCities(query) {
-  try {
-    const response = await fetch(
-      `${geocodingApiUrl}?q=${encodeURIComponent(
-        query
-      )}&type=like&appid=${apiKey}&units=metric`
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch cities");
-    }
-
-    const data = await response.json();
-    updateSuggestions(data.list);
-  } catch (error) {
-    console.error("Error:", error);
-    clearSuggestions();
-  }
-}
-
-function updateSuggestions(cities) {
-  const suggestionBox = document.getElementById("suggestions");
-  suggestionBox.innerHTML = "";
-
-  if (!cities || cities.length === 0) {
-    suggestionBox.style.display = "none";
-    return;
-  }
-
-  cities.slice(0, 5).forEach((city) => {
-    const div = document.createElement("div");
-    div.className = "suggestion-item";
-    div.textContent = `${city.name}, ${city.sys.country}`;
-
-    div.addEventListener("click", () => {
-      document.getElementById("locationInput").value = div.textContent;
-      suggestionBox.style.display = "none";
-      getWeather();
-    });
-
-    suggestionBox.appendChild(div);
-  });
-
-  suggestionBox.style.display = "block";
-}
-
-function clearSuggestions() {
-  const suggestionBox = document.getElementById("suggestions");
-  suggestionBox.innerHTML = "";
-  suggestionBox.style.display = "none";
-}
-
-// Hide suggestions when clicking outside
-document.addEventListener("click", (e) => {
-  if (!e.target.closest(".search-container")) {
-    clearSuggestions();
-  }
-});
 
 async function getWeather() {
   const location = document.getElementById("locationInput").value;
@@ -111,7 +30,7 @@ async function getWeather() {
     document.getElementById("humidity").textContent = `${data.main.humidity}%`;
     document.getElementById("wind").textContent = `${data.wind.speed} m/s`;
 
-    // Update weather icon
+    // Update weather icon based on weather condition
     const weatherMain = data.weather[0].main.toLowerCase();
     let iconName = "default.png";
 
@@ -141,3 +60,19 @@ async function getWeather() {
     alert("Error fetching weather data. Please try again.");
   }
 }
+
+// Optional: Add this to test the API connection
+window.addEventListener("load", () => {
+  // Test API connection with a default city
+  const testUrl = `${apiUrl}?q=London&appid=${apiKey}&units=metric`;
+  fetch(testUrl)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      console.log("API connection successful");
+    })
+    .catch((error) => {
+      console.error("API connection test failed:", error);
+    });
+});
