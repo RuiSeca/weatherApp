@@ -1,40 +1,96 @@
 const apiKey = "5a0a261f16b352ff63cdb857d7a97bd";
 const apiUrl = "https://api.openweathermap.org/data/2.5/weather";
-const geocodingApiUrl = "https://api.openweathermap.org/geo/1.0/direct";
+const geocodingApiUrl = "https://api.openweathermap.org/data/2.5/find"; // Using find API instead
 
-// Get DOM elements
-const weatherButton = document.getElementById("weatherButton");
-const locationInput = document.getElementById("locationInput");
-const loadingSpinner = document.getElementById("loading-spinner");
+document.getElementById("weatherButton").addEventListener("click", getWeather);
+document.getElementById("locationInput").addEventListener("input", handleInput);
 
-// Add event listeners
-weatherButton.addEventListener("click", getWeather);
-locationInput.addEventListener("input", handleInput);
+let timeoutId;
 
-// Initial weather call - only if there's a location value
-if (locationInput.value) {
-  getWeather();
-}
-
-let debounceTimer;
 function handleInput(event) {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => {
-    if (event.target.value.length >= 3) {
-      getCitySuggestions(event.target.value);
-    }
-  }, 300);
-}
+  const input = event.target.value;
 
-async function getWeather() {
-  const location = locationInput.value;
-  if (!location) {
-    showError("Please enter a location");
+  // Clear previous timeout
+  clearTimeout(timeoutId);
+
+  // Don't search if input is too short
+  if (input.length < 3) {
+    clearSuggestions();
     return;
   }
 
-  // Show loading spinner
-  showLoading(true);
+  // Set new timeout
+  timeoutId = setTimeout(() => {
+    searchCities(input);
+  }, 500);
+}
+
+async function searchCities(query) {
+  try {
+    const response = await fetch(
+      `${geocodingApiUrl}?q=${encodeURIComponent(
+        query
+      )}&type=like&appid=${apiKey}&units=metric`
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch cities");
+    }
+
+    const data = await response.json();
+    updateSuggestions(data.list);
+  } catch (error) {
+    console.error("Error:", error);
+    clearSuggestions();
+  }
+}
+
+function updateSuggestions(cities) {
+  const suggestionBox = document.getElementById("suggestions");
+  suggestionBox.innerHTML = "";
+
+  if (!cities || cities.length === 0) {
+    suggestionBox.style.display = "none";
+    return;
+  }
+
+  cities.slice(0, 5).forEach((city) => {
+    const div = document.createElement("div");
+    div.className = "suggestion-item";
+    div.textContent = `${city.name}, ${city.sys.country}`;
+
+    div.addEventListener("click", () => {
+      document.getElementById("locationInput").value = div.textContent;
+      suggestionBox.style.display = "none";
+      getWeather();
+    });
+
+    suggestionBox.appendChild(div);
+  });
+
+  suggestionBox.style.display = "block";
+}
+
+function clearSuggestions() {
+  const suggestionBox = document.getElementById("suggestions");
+  suggestionBox.innerHTML = "";
+  suggestionBox.style.display = "none";
+}
+
+// Hide suggestions when clicking outside
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".search-container")) {
+    clearSuggestions();
+  }
+});
+
+async function getWeather() {
+  const location = document.getElementById("locationInput").value;
+
+  if (!location) {
+    alert("Please enter a city name");
+    return;
+  }
 
   try {
     const response = await fetch(
@@ -42,141 +98,46 @@ async function getWeather() {
     );
 
     if (!response.ok) {
-      throw new Error(`Weather data not found for ${location}`);
+      throw new Error("City not found");
     }
 
     const data = await response.json();
 
-    // Check if we have the required data
-    if (!data || !data.main || !data.weather || !data.weather[0]) {
-      throw new Error("Invalid weather data received");
+    // Update the weather information
+    document.getElementById("temperature").textContent = `${Math.round(
+      data.main.temp
+    )}°C`;
+    document.getElementById("location").textContent = data.name;
+    document.getElementById("humidity").textContent = `${data.main.humidity}%`;
+    document.getElementById("wind").textContent = `${data.wind.speed} m/s`;
+
+    // Update weather icon
+    const weatherMain = data.weather[0].main.toLowerCase();
+    let iconName = "default.png";
+
+    switch (weatherMain) {
+      case "clear":
+        iconName = "clear.png";
+        break;
+      case "clouds":
+        iconName = "clouds.png";
+        break;
+      case "rain":
+        iconName = "rain.png";
+        break;
+      case "drizzle":
+        iconName = "drizzle.png";
+        break;
+      case "mist":
+        iconName = "mist.png";
+        break;
     }
 
-    displayWeather(data);
-    updateLastUpdated();
-    hideError();
+    const weatherIcon = document.querySelector(".weather-icon");
+    weatherIcon.src = `assets/images/${iconName}`;
+    weatherIcon.alt = data.weather[0].description;
   } catch (error) {
     console.error("Error:", error);
-    showError(error.message || "Failed to fetch weather data");
-    resetDisplay();
-  } finally {
-    showLoading(false);
+    alert("Error fetching weather data. Please try again.");
   }
 }
-
-async function getCitySuggestions(input) {
-  try {
-    const response = await fetch(
-      `${geocodingApiUrl}?q=${encodeURIComponent(
-        input
-      )}&limit=5&appid=${apiKey}`
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch city suggestions");
-    }
-
-    const cities = await response.json();
-    displaySuggestions(cities);
-  } catch (error) {
-    console.error("Error:", error);
-    // Clear suggestions in case of error
-    clearSuggestions();
-  }
-}
-
-function displayWeather(data) {
-  if (!data || !data.main || !data.weather || !data.weather[0]) {
-    throw new Error("Invalid weather data");
-  }
-
-  // Update DOM elements with weather data
-  document.getElementById("temperature").textContent = `${Math.round(
-    data.main.temp
-  )}°C`;
-  document.getElementById("location").textContent = data.name;
-  document.getElementById("humidity").textContent = `${data.main.humidity}%`;
-  document.getElementById("wind").textContent = `${data.wind.speed} m/s`;
-
-  // Update weather icon
-  const weatherIcon = document.querySelector(".weather-icon");
-  const weatherCondition = data.weather[0].main.toLowerCase();
-
-  // Map weather conditions to icon files
-  const weatherIcons = {
-    clouds: "clouds.png",
-    clear: "clear.png",
-    rain: "rain.png",
-    drizzle: "drizzle.png",
-    mist: "mist.png",
-    snow: "snow.png",
-    thunderstorm: "thunderstorm.png",
-  };
-
-  weatherIcon.src = `assets/images/${
-    weatherIcons[weatherCondition] || "default.png"
-  }`;
-  weatherIcon.alt = data.weather[0].description;
-}
-
-function displaySuggestions(cities) {
-  const datalist = document.getElementById("cities");
-  datalist.innerHTML = "";
-
-  cities.forEach((city) => {
-    const option = document.createElement("option");
-    option.value = `${city.name}${city.state ? `, ${city.state}` : ""}, ${
-      city.country
-    }`;
-    datalist.appendChild(option);
-  });
-}
-
-function clearSuggestions() {
-  const datalist = document.getElementById("cities");
-  datalist.innerHTML = "";
-}
-
-function showError(message) {
-  const errorElement = document.getElementById("error-message");
-  if (errorElement) {
-    errorElement.textContent = message;
-    errorElement.style.display = "block";
-  }
-}
-
-function hideError() {
-  const errorElement = document.getElementById("error-message");
-  if (errorElement) {
-    errorElement.style.display = "none";
-  }
-}
-
-function showLoading(show) {
-  if (loadingSpinner) {
-    loadingSpinner.classList.toggle("hidden", !show);
-  }
-}
-
-function resetDisplay() {
-  document.getElementById("temperature").textContent = "Temperature: --°C";
-  document.getElementById("location").textContent = "Location: --";
-  document.getElementById("humidity").textContent = "--%";
-  document.getElementById("wind").textContent = "-- m/s";
-  document.querySelector(".weather-icon").src = "assets/images/default.png";
-}
-
-function updateLastUpdated() {
-  const lastUpdated = document.getElementById("lastUpdated");
-  if (lastUpdated) {
-    const now = new Date();
-    lastUpdated.textContent = `Last updated: ${now.toLocaleTimeString()}`;
-  }
-}
-
-// Update weather every 10 minutes if there's a location entered
-setInterval(() => {
-  if (locationInput.value) {
-    getWeather();
-  }
-}, 600000);
