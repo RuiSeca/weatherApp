@@ -3,32 +3,39 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Weather App</title>
-  <!-- Link to your external CSS file -->
   <link rel="stylesheet" href="assets/css/styles.css" />
+  <title>Weather</title>
 </head>
 <body>
-
-  <div class="container">
-    <h1>Weather App</h1>
-    <label for="locationInput">Enter City:</label>
-    <input id="locationInput" type="text" list="cities" placeholder="Type city name">
-    <datalist id="cities">
-      <!-- Suggestions will be dynamically added here -->
-    </datalist>
-
+  <div class="card">
+    <h1>Weather Cast</h1>
+    <!-- Added placeholder to the input field -->
+    <input type="text" id="locationInput" placeholder="Enter location">
     <button id="weatherButton">Get Weather</button>
 
-    <div class="weather-info">
-      <p id="location"></p>
-      <p id="temperature"></p>
-      <p id="humidity"></p>
-      <p id="wind"></p>
-      <img class="weather-icon" src="" alt="Weather Icon">
+    <div class="weather">
+      <img src="assets/images/rain.png" class="weather-icon" alt="Rainy weather">
+      <h1 class="temp" id="temperature">Temperature:</h1>
+      <h2 class="city" id="location">Location:</h2>
+
+      <div class="details">
+        <div class="col">
+          <img src="assets/images/humidity.png" alt="Humidity icon">
+          <div>
+            <p class="humidity" id="humidity">Humidity:</p>
+          </div>
+        </div>
+
+        <div class="col">
+          <img src="assets/images/wind.png" alt="Wind speed icon">
+          <div>
+            <p class="wind" id="wind">Wind Speed:</p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Link to your JavaScript file -->
-  <script src="weather.js"></script> <!-- Adjust the path to your JS file -->
+  <script src="assets/js/main.js"></script>
 </body>
 </html>
