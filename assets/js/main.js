@@ -1,5 +1,6 @@
 const apiKey = '5a0a261f16b6352ff63cdb857d7a97bd';
 const apiUrl = 'https://api.openweathermap.org/data/2.5/weather';
+const geocodingApiUrl = 'http://api.openweathermap.org/data/2.5/find';  // OpenWeather Geocoding API
 
 document.getElementById('weatherButton').addEventListener('click', getWeather);
 
@@ -8,6 +9,9 @@ getWeather();
 
 // Set interval to update weather every 10 minutes (600,000 milliseconds)
 setInterval(getWeather, 600000);
+
+// Listen for input changes to suggest city names
+document.getElementById('locationInput').addEventListener('input', getCitySuggestions);
 
 async function getWeather() {
   const location = document.getElementById('locationInput').value;
@@ -27,6 +31,33 @@ async function getWeather() {
     // Handle error, e.g., display a default icon or message
     document.getElementById('location').textContent = 'Location not found';
     document.querySelector('.weather-icon').src = 'assets/images/default.png';
+  }
+}
+
+async function getCitySuggestions() {
+  const input = document.getElementById('locationInput').value;
+  
+  // Fetch city suggestions if input is at least 3 characters long
+  if (input.length >= 3) {
+    try {
+      const response = await fetch(`${geocodingApiUrl}?q=${input}&appid=${apiKey}&type=like`);
+      const data = await response.json();
+      
+      // Get the datalist element
+      const datalist = document.getElementById('cities');
+      
+      // Clear existing suggestions
+      datalist.innerHTML = '';
+      
+      // Add new suggestions to the datalist
+      data.list.forEach(city => {
+        const option = document.createElement('option');
+        option.value = `${city.name}, ${city.sys.country}`; // Display city name and country
+        datalist.appendChild(option);
+      });
+    } catch (error) {
+      console.error('Error fetching city suggestions:', error);
+    }
   }
 }
 
