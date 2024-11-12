@@ -3,38 +3,21 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="Weather forecast application providing real-time weather information"
-    />
     <link rel="stylesheet" href="assets/css/styles.css" />
-    <title>Weather Cast</title>
+    <title>Weather</title>
   </head>
   <body>
     <div class="card">
       <h1>Weather Cast</h1>
-
       <div class="search-container">
-        <div class="input-wrapper">
-          <input
-            type="text"
-            id="locationInput"
-            list="cities"
-            placeholder="Enter city name"
-            aria-label="Enter city name"
-            autocomplete="off"
-          />
-          <datalist id="cities"></datalist>
-        </div>
+        <input
+          type="text"
+          id="locationInput"
+          placeholder="Enter location"
+          autocomplete="off"
+        />
+        <div id="suggestions" class="suggestions-box"></div>
         <button id="weatherButton">Get Weather</button>
-      </div>
-
-      <!-- Error message container -->
-      <div id="error-message" class="error-message" role="alert"></div>
-
-      <!-- Loading spinner -->
-      <div id="loading-spinner" class="loading-spinner hidden" role="status">
-        <span class="sr-only">Loading weather data...</span>
       </div>
 
       <div class="weather">
@@ -42,30 +25,25 @@
           src="assets/images/default.png"
           class="weather-icon"
           alt="Weather condition"
-          id="weatherIcon"
         />
         <h1 class="temp" id="temperature">Temperature: --°C</h1>
         <h2 class="city" id="location">Location: --</h2>
 
         <div class="details">
           <div class="col">
-            <img src="assets/images/humidity.png" alt="Humidity" />
+            <img src="assets/images/humidity.png" alt="Humidity icon" />
             <div>
               <p class="humidity" id="humidity">--%</p>
             </div>
           </div>
 
           <div class="col">
-            <img src="assets/images/wind.png" alt="Wind speed" />
+            <img src="assets/images/wind.png" alt="Wind speed icon" />
             <div>
               <p class="wind" id="wind">-- m/s</p>
             </div>
           </div>
         </div>
-      </div>
-
-      <div class="app-footer">
-        <p id="lastUpdated">Last updated: Never</p>
       </div>
     </div>
 
